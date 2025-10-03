@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional, List
-from models import Book, BookSearch, HealthCheck
+from models import Book, BookSearch, HealthCheck, StatsOverview, StatsCategories, CategoryStats, PriceRangeFilter
 from data_service import DataService
 
 app = FastAPI(
@@ -22,14 +22,6 @@ def get_all_books():
     books = data_service.get_all_books()
     return books
 
-@app.get("/api/v1/books/{book_id}", response_model=Book)
-def get_book_by_id(book_id: int):
-    """Retorna detalhes completos de um livro específico pelo ID"""
-    book = data_service.get_book_by_id(book_id)
-    if not book:
-        raise HTTPException(status_code=404, detail="Livro não encontrado")
-    return book
-
 @app.get("/api/v1/books/search", response_model=BookSearch)
 def search_books(
     title: Optional[str] = Query(None, description="Título do livro para busca"),
@@ -41,6 +33,37 @@ def search_books(
     
     books = data_service.search_books(title=title, category=category)
     return BookSearch(books=books, total=len(books))
+
+@app.get("/api/v1/books/top-rated", response_model=List[Book])
+def get_top_rated_books():
+    """Lista os livros com melhor avaliação (rating mais alto)"""
+    top_books = data_service.get_top_rated_books()
+    return top_books
+
+@app.get("/api/v1/books/price-range", response_model=PriceRangeFilter)
+def get_books_by_price_range(
+    min: float = Query(..., description="Preço mínimo", ge=0),
+    max: float = Query(..., description="Preço máximo", ge=0)
+):
+    """Filtra livros dentro de uma faixa de preço específica"""
+    if min > max:
+        raise HTTPException(status_code=400, detail="Preço mínimo não pode ser maior que o preço máximo")
+    
+    books = data_service.get_books_by_price_range(min, max)
+    return PriceRangeFilter(
+        livros=books,
+        total=len(books),
+        preco_minimo=min,
+        preco_maximo=max
+    )
+
+@app.get("/api/v1/books/{book_id}", response_model=Book)
+def get_book_by_id(book_id: int):
+    """Retorna detalhes completos de um livro específico pelo ID"""
+    book = data_service.get_book_by_id(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Livro não encontrado")
+    return book
 
 @app.get("/api/v1/categories", response_model=List[str])
 def get_all_categories():
@@ -70,3 +93,16 @@ def health_check():
         total_books=total_books,
         data_file_exists=data_available
     )
+
+@app.get("/api/v1/stats/overview", response_model=StatsOverview)
+def get_stats_overview():
+    """Estatísticas gerais da coleção (total de livros, preço médio, distribuição de ratings)"""
+    stats = data_service.get_stats_overview()
+    return StatsOverview(**stats)
+
+@app.get("/api/v1/stats/categories", response_model=StatsCategories)
+def get_stats_categories():
+    """Estatísticas detalhadas por categoria (quantidade de livros, preços por categoria)"""
+    categories_stats = data_service.get_stats_by_category()
+    categories = [CategoryStats(**cat_stat) for cat_stat in categories_stats]
+    return StatsCategories(categorias=categories, total_categorias=len(categories))
