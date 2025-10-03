@@ -5,7 +5,11 @@ from models import Book
 
 class DataService:
     def __init__(self):
-        self.csv_path = "../data/books_data.csv"
+        # Tenta primeiro o caminho local (desenvolvimento), depois o caminho do container
+        if os.path.exists("../data/books_data.csv"):
+            self.csv_path = "../data/books_data.csv"
+        else:
+            self.csv_path = "/app/data/books_data.csv"
         self.books_data = []
         self.load_data()
     
