@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional, List
-from models import Book, BookSearch, HealthCheck, StatsOverview, StatsCategories, CategoryStats, PriceRangeFilter, MLFeatures, TrainingData, PredictionRequest, PredictionResponse
+from models import Book, BookSearch, HealthCheck, StatsOverview, StatsCategories, CategoryStats, PriceRangeFilter, MLFeatures, TrainingData, PredictionRequest, PredictionResponse, LoginRequest, TokenResponse, RefreshTokenRequest
 from data_service import DataService
+from auth_service import AuthService
 
 app = FastAPI(
     title="Books API",
@@ -9,8 +10,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Inicializa o serviço de dados
+# Inicializa os serviços
 data_service = DataService()
+auth_service = AuthService()
 
 @app.get("/")
 def read_root():
@@ -138,3 +140,26 @@ def predict_rating(request: PredictionRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro na predição: {str(e)}")
+
+# Authentication Endpoints
+@app.post("/api/v1/auth/login", response_model=TokenResponse)
+def login(request: LoginRequest):
+    """Endpoint para autenticação e obtenção de tokens JWT"""
+    try:
+        tokens = auth_service.login(request.username, request.password)
+        return TokenResponse(**tokens)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
+
+@app.post("/api/v1/auth/refresh", response_model=TokenResponse)
+def refresh_token(request: RefreshTokenRequest):
+    """Endpoint para renovação de tokens JWT"""
+    try:
+        tokens = auth_service.refresh_access_token(request.refresh_token)
+        return TokenResponse(**tokens)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
