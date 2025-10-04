@@ -1,16 +1,42 @@
 steps:
-# Build the image from parent directory
+# Build API image
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-f', 'api/Dockerfile', '-t', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest', '.']
-# Push the image to Artifact Registry
+
+# Build Client image  
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-f', 'client/Dockerfile', '-t', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/client/latest', 'client/']
+
+# Push API image to Artifact Registry
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest']
-# Deploy image to Cloud Run
+
+# Push Client image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/client/latest']
+
+# Deploy API to Cloud Run
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
-  args: ['run', 'deploy', 'primeirosemestre-api', '--image', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest', '--region', 'us-central1']
+  args: ['run', 'deploy', 'primeirosemestre-api', 
+         '--image', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest', 
+         '--region', 'us-central1',
+         '--port', '8000',
+         '--allow-unauthenticated']
+
+# Deploy Client to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'primeirosemestre-client', 
+         '--image', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/client/latest', 
+         '--region', 'us-central1',
+         '--port', '8501',
+         '--set-env-vars', 'env=prod',
+         '--allow-unauthenticated']
+
 images:
 - 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest'
+- 'us-central1-docker.pkg.dev/fiap-primeirosemestre/client/latest'
+
 options:
   logging: CLOUD_LOGGING_ONLY
-#serviceAccount: 'projects/agrotime-devops/serviceAccounts/cloudbuild-sa@fiap-primeirosemestre.iam.gserviceaccount.com'
