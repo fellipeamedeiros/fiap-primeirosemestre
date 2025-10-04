@@ -6,8 +6,55 @@ from auth_service import AuthService
 
 app = FastAPI(
     title="Books API",
-    description="API para gerenciar dados de livros extraídos do Books to Scrape",
-    version="1.0.0"
+    description="""
+    ## API para gerenciar dados de livros extraídos do Books to Scrape
+    
+    Esta API oferece funcionalidades completas para:
+    
+    * **Livros**: Buscar, filtrar e obter informações detalhadas sobre livros
+    * **Categorias**: Listar e explorar categorias de livros
+    * **Estatísticas**: Obter insights e análises dos dados
+    * **Machine Learning**: Endpoints para features, treinamento e predições
+    * **Autenticação**: Sistema JWT para login e renovação de tokens
+    
+    ### Credenciais padrão:
+    - **Username**: usuario
+    - **Password**: teste
+    """,
+    version="1.0.0",
+    contact={
+        "name": "Fellipe Medeiros",
+        "email": "fellipe.medeiros1@gmail.com",
+    },
+    license_info={
+        "name": "MIT",
+    },
+    tags_metadata=[
+        {
+            "name": "Livros",
+            "description": "Operações relacionadas aos livros: buscar, filtrar, obter detalhes",
+        },
+        {
+            "name": "Categorias",
+            "description": "Operações relacionadas às categorias de livros",
+        },
+        {
+            "name": "Estatísticas",
+            "description": "Estatísticas e análises dos dados de livros",
+        },
+        {
+            "name": "Machine Learning",
+            "description": "Endpoints para features, treinamento e predições de ML",
+        },
+        {
+            "name": "Autenticação",
+            "description": "Sistema de autenticação JWT para login e renovação de tokens",
+        },
+        {
+            "name": "Sistema",
+            "description": "Endpoints de sistema para verificação de saúde da API",
+        },
+    ]
 )
 
 # Inicializa os serviços
@@ -18,13 +65,13 @@ auth_service = AuthService()
 def read_root():
     return {"message": "ok"}
 
-@app.get("/api/v1/books", response_model=List[Book])
+@app.get("/api/v1/books", response_model=List[Book], tags=["Livros"])
 def get_all_books():
     """Lista todos os livros disponíveis na base de dados"""
     books = data_service.get_all_books()
     return books
 
-@app.get("/api/v1/books/search", response_model=BookSearch)
+@app.get("/api/v1/books/search", response_model=BookSearch, tags=["Livros"])
 def search_books(
     title: Optional[str] = Query(None, description="Título do livro para busca"),
     category: Optional[str] = Query(None, description="Categoria do livro para busca")
@@ -36,13 +83,13 @@ def search_books(
     books = data_service.search_books(title=title, category=category)
     return BookSearch(books=books, total=len(books))
 
-@app.get("/api/v1/books/top-rated", response_model=List[Book])
+@app.get("/api/v1/books/top-rated", response_model=List[Book], tags=["Livros"])
 def get_top_rated_books():
     """Lista os livros com melhor avaliação (rating mais alto)"""
     top_books = data_service.get_top_rated_books()
     return top_books
 
-@app.get("/api/v1/books/price-range", response_model=PriceRangeFilter)
+@app.get("/api/v1/books/price-range", response_model=PriceRangeFilter, tags=["Livros"])
 def get_books_by_price_range(
     min: float = Query(..., description="Preço mínimo", ge=0),
     max: float = Query(..., description="Preço máximo", ge=0)
@@ -59,7 +106,7 @@ def get_books_by_price_range(
         preco_maximo=max
     )
 
-@app.get("/api/v1/books/{book_id}", response_model=Book)
+@app.get("/api/v1/books/{book_id}", response_model=Book, tags=["Livros"])
 def get_book_by_id(book_id: int):
     """Retorna detalhes completos de um livro específico pelo ID"""
     book = data_service.get_book_by_id(book_id)
@@ -67,13 +114,13 @@ def get_book_by_id(book_id: int):
         raise HTTPException(status_code=404, detail="Livro não encontrado")
     return book
 
-@app.get("/api/v1/categories", response_model=List[str])
+@app.get("/api/v1/categories", response_model=List[str], tags=["Categorias"])
 def get_all_categories():
     """Lista todas as categorias de livros disponíveis"""
     categories = data_service.get_all_categories()
     return categories
 
-@app.get("/api/v1/health", response_model=HealthCheck)
+@app.get("/api/v1/health", response_model=HealthCheck, tags=["Sistema"])
 def health_check():
     """Verifica status da API e conectividade com os dados"""
     total_books = data_service.get_total_books()
@@ -96,13 +143,13 @@ def health_check():
         data_file_exists=data_available
     )
 
-@app.get("/api/v1/stats/overview", response_model=StatsOverview)
+@app.get("/api/v1/stats/overview", response_model=StatsOverview, tags=["Estatísticas"])
 def get_stats_overview():
     """Estatísticas gerais da coleção (total de livros, preço médio, distribuição de ratings)"""
     stats = data_service.get_stats_overview()
     return StatsOverview(**stats)
 
-@app.get("/api/v1/stats/categories", response_model=StatsCategories)
+@app.get("/api/v1/stats/categories", response_model=StatsCategories, tags=["Estatísticas"])
 def get_stats_categories():
     """Estatísticas detalhadas por categoria (quantidade de livros, preços por categoria)"""
     categories_stats = data_service.get_stats_by_category()
@@ -110,19 +157,19 @@ def get_stats_categories():
     return StatsCategories(categorias=categories, total_categorias=len(categories))
 
 # ML Endpoints
-@app.get("/api/v1/ml/features", response_model=MLFeatures)
+@app.get("/api/v1/ml/features", response_model=MLFeatures, tags=["Machine Learning"])
 def get_ml_features():
     """Retorna dados formatados para features de machine learning"""
     features = data_service.get_ml_features()
     return features
 
-@app.get("/api/v1/ml/training-data", response_model=TrainingData)
+@app.get("/api/v1/ml/training-data", response_model=TrainingData, tags=["Machine Learning"])
 def get_training_data():
     """Retorna dataset formatado para treinamento de machine learning"""
     training_data = data_service.get_training_data()
     return training_data
 
-@app.post("/api/v1/ml/predictions", response_model=PredictionResponse)
+@app.post("/api/v1/ml/predictions", response_model=PredictionResponse, tags=["Machine Learning"])
 def predict_rating(request: PredictionRequest):
     """Endpoint para receber dados e retornar predições de rating"""
     try:
@@ -142,7 +189,7 @@ def predict_rating(request: PredictionRequest):
         raise HTTPException(status_code=400, detail=f"Erro na predição: {str(e)}")
 
 # Authentication Endpoints
-@app.post("/api/v1/auth/login", response_model=TokenResponse)
+@app.post("/api/v1/auth/login", response_model=TokenResponse, tags=["Autenticação"])
 def login(request: LoginRequest):
     """Endpoint para autenticação e obtenção de tokens JWT"""
     try:
@@ -153,7 +200,7 @@ def login(request: LoginRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
 
-@app.post("/api/v1/auth/refresh", response_model=TokenResponse)
+@app.post("/api/v1/auth/refresh", response_model=TokenResponse, tags=["Autenticação"])
 def refresh_token(request: RefreshTokenRequest):
     """Endpoint para renovação de tokens JWT"""
     try:

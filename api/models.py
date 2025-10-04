@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 class Book(BaseModel):
@@ -68,10 +68,10 @@ class TrainingData(BaseModel):
     total_samples: int
 
 class PredictionRequest(BaseModel):
-    titulo_length: int
-    preco: float
-    disponibilidade: str  # "In stock" ou "Out of stock"
-    categoria: str
+    titulo_length: int = Field(..., example=45, description="Número de caracteres no título do livro")
+    preco: float = Field(..., example=29.99, description="Preço do livro")
+    disponibilidade: str = Field(..., example="In stock", description="Status de disponibilidade")
+    categoria: str = Field(..., example="Fiction", description="Categoria do livro")
 
 class PredictionResponse(BaseModel):
     predicted_rating: int
@@ -80,14 +80,14 @@ class PredictionResponse(BaseModel):
 
 # Authentication Models
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., example="usuario", description="Nome de usuário")
+    password: str = Field(..., example="teste", description="Senha do usuário")
 
 class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int
+    access_token: str = Field(..., description="Token de acesso JWT")
+    refresh_token: str = Field(..., description="Token de renovação JWT")
+    token_type: str = Field(default="bearer", description="Tipo do token")
+    expires_in: int = Field(..., description="Tempo de expiração em segundos")
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(..., description="Token de renovação para obter novo access token")
