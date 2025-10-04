@@ -1,0 +1,16 @@
+steps:
+# Build the image from parent directory
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-f', 'api/Dockerfile', '-t', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest', '.']
+# Push the image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest']
+# Deploy image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'primeirosemestre-api', '--image', 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest', '--region', 'us-central1']
+images:
+- 'us-central1-docker.pkg.dev/fiap-primeirosemestre/api/latest'
+options:
+  logging: CLOUD_LOGGING_ONLY
+#serviceAccount: 'projects/agrotime-devops/serviceAccounts/cloudbuild-sa@fiap-primeirosemestre.iam.gserviceaccount.com'

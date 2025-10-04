@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia os arquivos de dependências
-COPY requirements.txt .
+COPY api/requirements.txt .
 
 # Instala as dependências Python
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -20,10 +20,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN mkdir -p /app/data
 
 # Copia o arquivo CSV de dados
-COPY ../data/books_data.csv /app/data/books_data.csv
+COPY data/books_data.csv /app/data/books_data.csv
 
 # Copia o código da aplicação
-COPY *.py .
+COPY api/main.py .
+COPY api/models.py .
+COPY api/data_service.py .
 
 # Cria um usuário não-root para segurança
 RUN useradd --create-home --shell /bin/bash app && \
