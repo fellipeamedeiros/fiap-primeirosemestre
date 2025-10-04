@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 class Book(BaseModel):
     id: int
@@ -45,3 +45,35 @@ class PriceRangeFilter(BaseModel):
     total: int
     preco_minimo: float
     preco_maximo: float
+
+# ML Models
+class MLFeature(BaseModel):
+    id: int
+    titulo_length: int
+    preco: float
+    rating: int
+    disponibilidade_encoded: int  # 0 ou 1
+    categoria_encoded: int
+    categoria: str
+
+class MLFeatures(BaseModel):
+    features: List[MLFeature]
+    total: int
+    feature_names: List[str]
+
+class TrainingData(BaseModel):
+    features: List[List[float]]  # Features numéricas para treinamento
+    labels: List[int]  # Labels (ratings) para treinamento
+    feature_names: List[str]
+    total_samples: int
+
+class PredictionRequest(BaseModel):
+    titulo_length: int
+    preco: float
+    disponibilidade: str  # "In stock" ou "Out of stock"
+    categoria: str
+
+class PredictionResponse(BaseModel):
+    predicted_rating: int
+    confidence: float
+    input_features: Dict[str, Any]

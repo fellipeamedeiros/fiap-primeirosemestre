@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional, List
-from models import Book, BookSearch, HealthCheck, StatsOverview, StatsCategories, CategoryStats, PriceRangeFilter
+from models import Book, BookSearch, HealthCheck, StatsOverview, StatsCategories, CategoryStats, PriceRangeFilter, MLFeatures, TrainingData, PredictionRequest, PredictionResponse
 from data_service import DataService
 
 app = FastAPI(
@@ -106,3 +106,35 @@ def get_stats_categories():
     categories_stats = data_service.get_stats_by_category()
     categories = [CategoryStats(**cat_stat) for cat_stat in categories_stats]
     return StatsCategories(categorias=categories, total_categorias=len(categories))
+
+# ML Endpoints
+@app.get("/api/v1/ml/features", response_model=MLFeatures)
+def get_ml_features():
+    """Retorna dados formatados para features de machine learning"""
+    features = data_service.get_ml_features()
+    return features
+
+@app.get("/api/v1/ml/training-data", response_model=TrainingData)
+def get_training_data():
+    """Retorna dataset formatado para treinamento de machine learning"""
+    training_data = data_service.get_training_data()
+    return training_data
+
+@app.post("/api/v1/ml/predictions", response_model=PredictionResponse)
+def predict_rating(request: PredictionRequest):
+    """Endpoint para receber dados e retornar predições de rating"""
+    try:
+        prediction = data_service.predict_rating(
+            titulo_length=request.titulo_length,
+            preco=request.preco,
+            disponibilidade=request.disponibilidade,
+            categoria=request.categoria
+        )
+        
+        return PredictionResponse(
+            predicted_rating=prediction["predicted_rating"],
+            confidence=prediction["confidence"],
+            input_features=prediction["input_features"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro na predição: {str(e)}")

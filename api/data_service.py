@@ -1,7 +1,7 @@
 import csv
 import os
 from typing import List, Optional, Dict, Any
-from models import Book
+from models import Book, MLFeature, MLFeatures, TrainingData
 
 class DataService:
     def __init__(self):
@@ -272,3 +272,139 @@ class DataService:
                 continue
         
         return filtered_books
+    
+    # ML Methods
+    def get_ml_features(self) -> MLFeatures:
+        """Retorna dados formatados para features de ML"""
+        if not self.books_data:
+            return MLFeatures(features=[], total=0, feature_names=[])
+        
+        # Mapeia categorias para números
+        categories = list(set(row['categoria'] for row in self.books_data))
+        category_mapping = {cat: idx for idx, cat in enumerate(categories)}
+        
+        features = []
+        for row in self.books_data:
+            try:
+                # Codifica disponibilidade: 1 para "In stock", 0 para outros
+                disponibilidade_encoded = 1 if "In stock" in row['disponibilidade'] else 0
+                
+                feature = MLFeature(
+                    id=int(row['id']),
+                    titulo_length=len(row['titulo']),
+                    preco=float(row['preco']),
+                    rating=int(row['rating']),
+                    disponibilidade_encoded=disponibilidade_encoded,
+                    categoria_encoded=category_mapping[row['categoria']],
+                    categoria=row['categoria']
+                )
+                features.append(feature)
+            except (ValueError, KeyError) as e:
+                print(f"Erro ao processar feature: {e}")
+                continue
+        
+        feature_names = [
+            "titulo_length", "preco", "rating", 
+            "disponibilidade_encoded", "categoria_encoded"
+        ]
+        
+        return MLFeatures(
+            features=features,
+            total=len(features),
+            feature_names=feature_names
+        )
+    
+    def get_training_data(self) -> TrainingData:
+        """Retorna dataset formatado para treinamento de ML"""
+        if not self.books_data:
+            return TrainingData(features=[], labels=[], feature_names=[], total_samples=0)
+        
+        # Mapeia categorias para números
+        categories = list(set(row['categoria'] for row in self.books_data))
+        category_mapping = {cat: idx for idx, cat in enumerate(categories)}
+        
+        features = []
+        labels = []
+        
+        for row in self.books_data:
+            try:
+                # Features numéricas
+                titulo_length = len(row['titulo'])
+                preco = float(row['preco'])
+                disponibilidade_encoded = 1 if "In stock" in row['disponibilidade'] else 0
+                categoria_encoded = category_mapping[row['categoria']]
+                
+                # Label (target)
+                rating = int(row['rating'])
+                
+                features.append([titulo_length, preco, disponibilidade_encoded, categoria_encoded])
+                labels.append(rating)
+                
+            except (ValueError, KeyError) as e:
+                print(f"Erro ao processar dados de treinamento: {e}")
+                continue
+        
+        feature_names = [
+            "titulo_length", "preco", "disponibilidade_encoded", "categoria_encoded"
+        ]
+        
+        return TrainingData(
+            features=features,
+            labels=labels,
+            feature_names=feature_names,
+            total_samples=len(features)
+        )
+    
+    def predict_rating(self, titulo_length: int, preco: float, 
+                      disponibilidade: str, categoria: str) -> Dict[str, Any]:
+        """Predição simples de rating baseada em heurísticas"""
+        # Mapeia categorias existentes
+        categories = list(set(row['categoria'] for row in self.books_data))
+        if categoria not in categories:
+            categoria_encoded = 0  # Categoria desconhecida
+        else:
+            category_mapping = {cat: idx for idx, cat in enumerate(categories)}
+            categoria_encoded = category_mapping[categoria]
+        
+        disponibilidade_encoded = 1 if "In stock" in disponibilidade else 0
+        
+        # Heurística simples para predição
+        # Baseada em análise dos dados existentes
+        predicted_rating = 3  # Rating padrão
+        confidence = 0.5
+        
+        # Ajusta rating baseado no preço (livros mais caros tendem a ter ratings melhores)
+        if preco > 50:
+            predicted_rating += 1
+            confidence += 0.1
+        elif preco < 20:
+            predicted_rating -= 1
+            confidence += 0.1
+        
+        # Ajusta rating baseado na disponibilidade
+        if disponibilidade_encoded == 1:
+            predicted_rating += 0.5
+            confidence += 0.1
+        
+        # Ajusta rating baseado no tamanho do título
+        if titulo_length > 50:
+            predicted_rating += 0.3
+        elif titulo_length < 20:
+            predicted_rating -= 0.3
+        
+        # Limita rating entre 1 e 5
+        predicted_rating = max(1, min(5, round(predicted_rating)))
+        confidence = min(1.0, confidence)
+        
+        return {
+            "predicted_rating": predicted_rating,
+            "confidence": confidence,
+            "input_features": {
+                "titulo_length": titulo_length,
+                "preco": preco,
+                "disponibilidade": disponibilidade,
+                "categoria": categoria,
+                "disponibilidade_encoded": disponibilidade_encoded,
+                "categoria_encoded": categoria_encoded
+            }
+        }
