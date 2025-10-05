@@ -26,6 +26,7 @@ COPY data/books_data.csv /app/data/books_data.csv
 COPY api/main.py .
 COPY api/models.py .
 COPY api/data_service.py .
+COPY api/auth_service.py .
 
 # Cria um usuário não-root para segurança
 RUN useradd --create-home --shell /bin/bash app && \
