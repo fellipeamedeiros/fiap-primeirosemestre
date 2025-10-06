@@ -100,6 +100,14 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
+## 🖥️ Endpoints
+
+- Frontend: https://primeirosemestre-client-593831299563.us-central1.run.app/
+- Backend: https://primeirosemestre-api-593831299563.us-central1.run.app/
+- Swagger UI: https://primeirosemestre-api-593831299563.us-central1.run.app/docs
+- Redoc: https://primeirosemestre-api-593831299563.us-central1.run.app/redoc
+- OpenAPI JSON: https://primeirosemestre-api-593831299563.us-central1.run.app/openapi.json
+
 ## 🏃‍♂️ Execução
 
 ### 1. Executar o Web Scraper (Primeira vez)
